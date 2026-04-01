@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <title>Admin Dashboard | ระบบจัดการเวลา</title>
+    <style>
+        body { font-family: 'Noto Sans Thai', sans-serif; transition: all 0.3s; }
+        .hidden-page { display: none !important; }
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body class="bg-slate-900">
+
+    <div id="loginSection" class="fixed inset-0 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl animate-fadeIn">
+            <div class="text-center mb-8">
+                <div class="inline-block p-5 bg-slate-100 rounded-full mb-4 text-2xl">🔐</div>
+                <h3 class="text-4xl font-black text-slate-800 uppercase tracking-tighter">ระบบหลังบ้าน</h3>
+                <p class="text-slate-400 text-[10px] font-bold uppercase mt-1 tracking-widest">เฉพาะผู้ดูแลเท่านั้น</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="uField" placeholder="Username" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-500 outline-none font-bold transition-all">
+                <input type="password" id="pField" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-500 outline-none font-bold transition-all">
+            </div>
+            <button onclick="checkAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black mt-8 uppercase shadow-lg transition-all active:scale-95">เข้าสู่ระบบ</button>
+            <button onclick="location.href='index.html'" class="w-full text-slate-400 font-bold text-[14px] mt-6 text-center uppercase tracking-widest hover:text-slate-600 transition-colors">← กลับไปหน้าหลัก</button>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden-page bg-slate-50 min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 animate-fadeIn">
+                <div>
+                    <h2 class="text-5xl font-black text-slate-800 italic uppercase leading-none">แดชบอร์ด</h2>
+                    <p class="text-[12px] text-slate-400 font-black uppercase tracking-[0.2em] italic mt-2">แผงควบคุมการบริหาร</p>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="fetchHistory()" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl text-16 font-black shadow-lg active:scale-95 transition-all uppercase italic">รีเฟรช</button>
+                    <button onclick="location.reload()" class="flex-1 md:flex-none bg-white text-rose-500 border border-rose-100 px-6 py-3 rounded-2xl text-16 font-black active:scale-95 transition-all uppercase italic hover:bg-rose-50 shadow-sm">ออก</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 animate-fadeIn">
+                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <p class="text-[14px] font-black text-slate-400 uppercase italic">พนักงานทั้งหมด</p>
+                    <p id="statCount" class="text-2xl font-black text-slate-800 italic uppercase">...</p>
+                </div>
+                <div class="bg-emerald-500 p-6 rounded-[2rem] shadow-lg shadow-emerald-500/20">
+                    <p class="text-[14px] font-black text-emerald-100 uppercase italic">เข้าทำงานวันนี้</p>
+                    <p id="todayInCount" class="text-2xl font-black text-white italic">0</p> 
+                </div>
+                <div class="bg-slate-800 p-6 rounded-[2rem] shadow-lg shadow-slate-800/20">
+                    <p class="text-[14px] font-black text-slate-400 uppercase italic">ฐานข้อมูล</p>
+                    <a href="https://docs.google.com/spreadsheets/d/1AZpO9_zIn_L__rP0AcYHemx0xlkoHgcLsf0d4lu76HI/edit?gid=1371469584" target="_blank" class="text-white font-bold text-[10px] underline decoration-blue-500 underline-offset-4 hover:text-blue-400 transition-colors uppercase italic">VIEW SHEET ↗</a>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm mb-8 animate-fadeIn">
+                <h4 class="text-[14px] font-black text-blue-500 uppercase italic mb-3 tracking-widest flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    เรียกรายงานรายบุคคล
+                </h4>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select id="adminEmpFilter" class="flex-1 p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 shadow-inner">
+                        <option value="">-- กำลังเชื่อมต่อ API... --</option>
+                    </select>
+                    <button id="searchBtn" onclick="searchUserHistory()" class="bg-slate-800 text-white px-8 py-4 rounded-3xl font-black hover:bg-black transition-all active:scale-95 uppercase italic text-18">ค้นหาข้อมูล</button>
+                </div>
+            </div>
+
+            <div id="searchResultSection" class="hidden-page mb-10 animate-fadeIn">
+                <div class="bg-white rounded-[2.5rem] shadow-xl border-t-8 border-blue-500 overflow-hidden">
+                    <div class="p-6 bg-slate-50 flex justify-between items-center border-b border-slate-100">
+                        <div>
+                            <h3 id="searchTitle" class="font-black italic uppercase text-blue-600 text-lg">REPORT: -</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ประวัติการทำงานรายบุคคล</p>
+                        </div>
+                        <button onclick="document.getElementById('searchResultSection').classList.add('hidden-page')" class="text-[10px] font-black bg-rose-100 text-rose-600 px-4 py-2 rounded-xl uppercase hover:bg-rose-200">CLOSE X</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="w-full text-left min-w-[800px]">
+                            <thead>
+                                <tr class="bg-slate-50/50">
+                                    <th class="p-4 text-[10px] font-black text-slate-400 uppercase italic">วัน/เวลา</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-400 uppercase italic">สถานที่</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-400 uppercase italic">กะทำงาน</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-400 uppercase italic">ประเภท</th>
+                                    <th class="p-4 text-[10px] font-black text-slate-400 uppercase italic">หมายเหตุ/เวลาทำ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchTableBody" class="text-sm font-medium text-slate-600"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const MY_CRED = { u: "Admin", p: "Dexdee123" };
+        
+        // --- ⚠️ สำคัญมาก: เปลี่ยนลิงก์ด้านล่างให้เป็น Web App URL ล่าสุดของคุณ ⚠️ ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbxyRQXYyyxFEVjS95dRxJtcA-aRjmqNueiT64ul00h5R-whgIp54BOA1c2W2jABGGpIoQ/exec";
+
+        let adminEmployeeCache = [];
+
+        function setAdminFilterOptions(employeeList) {
+            const filterSelect = document.getElementById('adminEmpFilter');
+            if (!filterSelect) return;
+            if (!employeeList || employeeList.length === 0) {
+                filterSelect.innerHTML = '<option value="">❌ ไม่พบรายชื่อพนักงานในระบบ</option>';
+                return;
+            }
+            filterSelect.innerHTML = '<option value="">-- เลือกชื่อพนักงาน --</option>' +
+                employeeList.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+
+        function checkAdminLogin() {
+            const userVal = document.getElementById('uField').value.trim();
+            const passVal = document.getElementById('pField').value.trim();
+            if (userVal.toLowerCase() === MY_CRED.u.toLowerCase() && passVal === MY_CRED.p) {
+                document.getElementById('loginSection').classList.add('hidden-page');
+                document.getElementById('dashboardSection').classList.remove('hidden-page');
+                document.body.className = "bg-slate-50";
+                fetchHistory(); 
+            } else {
+                alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+            }
+        }
+
+        async function fetchHistory() {
+            const filterSelect = document.getElementById('adminEmpFilter');
+            filterSelect.innerHTML = '<option value="">-- กำลังโหลดรายชื่อ... --</option>';
+
+            if (adminEmployeeCache.length > 0) {
+                setAdminFilterOptions(adminEmployeeCache);
+            }
+
+            try {
+                const res = await fetch(`${API_URL}?action=getData&t=${new Date().getTime()}`);
+                if (!res.ok) throw new Error('Network response was not ok');
+
+                const data = await res.json();
+                console.log("Data Received:", data); // ดูข้อมูลใน Console (F12)
+
+                // 1. อัปเดต Stats
+                document.getElementById('statCount').innerText = `${data.employees ? data.employees.length : 0} คน`;
+                document.getElementById('todayInCount').innerText = `${data.todayCheckinCount || 0} คน`;
+
+                // 2. โหลดรายชื่อลง Dropdown
+                if (data.employees && data.employees.length > 0) {
+                    adminEmployeeCache = data.employees.slice();
+                    setAdminFilterOptions(adminEmployeeCache);
+                } else if (adminEmployeeCache.length > 0) {
+                    setAdminFilterOptions(adminEmployeeCache);
+                } else {
+                    setAdminFilterOptions([]);
+                }
+                
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                filterSelect.innerHTML = '<option value="">❌ เชื่อมต่อ API ล้มเหลว</option>';
+                alert("ไม่สามารถดึงข้อมูลได้: \n1. เช็คว่า Deploy Web App เป็น 'Anyone' หรือยัง? \n2. เช็คชื่อ Sheet 'พนักงาน' ว่าตรงไหม?");
+            }
+        }
+
+        async function searchUserHistory() {
+            const name = document.getElementById('adminEmpFilter').value;
+            const btn = document.getElementById('searchBtn');
+            if (!name) return alert("⚠️ โปรดเลือกชื่อพนักงานก่อนค้นหา");
+
+            const searchSection = document.getElementById('searchResultSection');
+            const searchBody = document.getElementById('searchTableBody');
+            const searchTitle = document.getElementById('searchTitle');
+
+            btn.disabled = true;
+            btn.innerText = "กำลังค้นหา...";
+            searchSection.classList.remove('hidden-page');
+            searchBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-blue-400 animate-pulse font-black uppercase text-xs italic">กำลังดึงข้อมูล...</td></tr>';
+            searchTitle.innerText = `REPORT: ${name}`;
+
+            try {
+                const res = await fetch(`${API_URL}?action=getIndividual&name=${encodeURIComponent(name)}&t=${new Date().getTime()}`);
+                const data = await res.json();
+                const list = data.history || [];
+
+                if (list.length === 0) {
+                    searchBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-300 uppercase font-black italic text-xs">ไม่พบข้อมูลของพนักงานท่านนี้</td></tr>';
+                } else {
+                    searchBody.innerHTML = list.map(row => {
+                        const typeStyle = row.type.includes('เข้างาน') ? 'text-emerald-500 bg-emerald-50' : 
+                                         row.type.includes('ออกงาน') ? 'text-rose-500 bg-rose-50' : 'text-blue-500 bg-blue-50';
+                        
+                        let noteText = row.note || '-';
+                        if (row.duration) noteText += ` (รวม: ${row.duration})`;
+
+                        return `
+                        <tr class="border-b border-slate-50 hover:bg-blue-50/30 transition-colors">
+                            <td class="p-4 text-[10px] font-black text-slate-500 italic">${row.date} ${row.time}</td>
+                            <td class="p-4 text-[10px] font-black text-slate-600 uppercase italic">${row.location || '-'}</td>
+                            <td class="p-4 text-[10px] font-black text-slate-500 italic uppercase">${row.shift || '-'}</td>
+                            <td class="p-4">
+                                <span class="font-black uppercase text-[9px] px-2 py-1 rounded-lg italic ${typeStyle}">${row.type}</span>
+                            </td>
+                            <td class="p-4 text-[10px] text-slate-400 italic font-bold uppercase truncate-2">${noteText}</td>
+                        </tr>`;
+                    }).join('');
+                }
+                searchSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                console.error(err);
+                searchBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-rose-500 font-black italic">❌ ค้นหาไม่สำเร็จ</td></tr>';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "ค้นหาข้อมูล";
+            }
+        }
+
+        document.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkAdminLogin(); });
+    </script>
+</body>
+</html>

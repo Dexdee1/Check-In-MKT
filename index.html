@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>Work Smart</title>
+    <meta name="apple-mobile-web-app-title" content="WorkSmart">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Noto Sans Thai', sans-serif; 
+            background-color: #f1f5f9; 
+            font-size: 14px; 
+            color: #334155; 
+            overscroll-behavior-y: contain;
+            padding-top: env(safe-area-inset-top);
+            min-height: calc(100vh + env(safe-area-inset-top));
+        }
+        .main-container { padding-top: 1.5rem; }
+        .glass-popup { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.4); }
+        .pop-in { animation: springIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .shift-active { border: 3px solid #3b82f6 !important; background-color: #ffffff !important; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2); }
+        .date-tag { background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 99px; font-weight: 700; font-size: 11px; display: flex; align-items: center; gap: 5px; border: 1px solid #cbd5e1; }
+        .activity-item { animation: slideInLeft 0.5s ease-out; border-bottom: 1px solid #f1f5f9; }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes springIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col p-5 main-container">
+        
+        <div class="flex flex-col items-center mb-6 space-y-3">
+            <h1 class="text-5xl font-black text-slate-800 uppercase tracking-tighter italic">WORK <span class="text-blue-600">SMART</span></h1>
+            <div class="flex gap-2 w-full justify-center">
+                <button onclick="showRulePopup()" class="flex-1 max-w-[120px] font-black bg-white text-slate-500 py-2.5 rounded-full uppercase border border-slate-200 shadow-sm text-[14px]">กฎระเบียบ</button>
+                <button onclick="location.href='admin.html'" class="flex-1 max-w-[120px] font-black bg-yellow-300 text-black py-2.5 rounded-full uppercase border border-yellow-400 shadow-sm text-[14px]">แอดมิน</button>
+            </div>
+        </div>
+
+        <div class="bg-white/80 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white mb-6 space-y-5">
+            <div>
+                <label class="font-black text-slate-400 uppercase tracking-widest ml-4 text-[10px]">พนักงาน</label>
+                <select id="empList" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 mt-1 shadow-inner italic text-sm">
+                    <option value="">-- เลือกพนักงาน --</option>
+                </select>
+            </div>
+            <div>
+                <label class="font-black text-slate-400 uppercase tracking-widest ml-4 text-[10px]">เว็บที่ทำงาน</label>
+                <select id="locList" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 mt-1 shadow-inner italic text-sm">
+                    <option value="">-- เลือกเว็บที่ทำงาน --</option>
+                </select>
+            </div>
+        </div>
+
+        <main class="space-y-8">
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 px-2">
+                    <div class="w-2 h-5 bg-orange-500 rounded-full"></div>
+                    <h2 class="font-black text-slate-700 italic uppercase text-sm">ระบบกะ 12 ชม. (เป้าหมาย 08:00 / 20:00)</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="shiftMorning" onclick="selectShift(this, 'กะเช้า')" class="shift-btn bg-white p-5 rounded-[2rem] shadow-sm border-2 border-transparent font-bold transition-all text-center">
+                        <span class="block text-2xl mb-1">☀️</span>
+                        <span class="block text-lg font-black">กะเช้า</span>
+                    </button>
+                    <button id="shiftNight" onclick="selectShift(this, 'กะดึก')" class="shift-btn bg-white p-5 rounded-[2rem] shadow-sm border-2 border-transparent font-bold transition-all text-center">
+                        <span class="block text-2xl mb-1">🌙</span>
+                        <span class="block text-lg font-black">กะดึก</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <button onclick="handleAction('เข้างาน')" class="bg-emerald-500 text-white py-5 rounded-[2.2rem] font-black shadow-lg shadow-emerald-200 active:scale-95 transition-all text-lg uppercase">เข้างาน</button>
+                    <button onclick="handleAction('ออกงาน')" class="bg-rose-500 text-white py-5 rounded-[2.2rem] font-black shadow-lg shadow-rose-200 active:scale-95 transition-all text-lg uppercase">ออกงาน</button>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 px-2">
+                    <div class="w-2 h-5 bg-blue-500 rounded-full"></div>
+                    <h2 class="font-black text-slate-700 italic uppercase text-sm">การลางาน & อื่นๆ</h2>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="handleLeave(this, 'ลากิจ')" class="bg-white py-4 rounded-2xl shadow-sm text-amber-600 font-black border border-white text-[13px]">⚠️ ลากิจ</button>
+                    <button onclick="handleLeave(this, 'ลาป่วย')" class="bg-white py-4 rounded-2xl shadow-sm text-rose-600 font-black border border-white text-[13px]">☣️ ลาป่วย</button>
+                    <button onclick="handleLeave(this, 'สลับวันหยุด')" class="bg-white py-4 rounded-2xl shadow-sm text-emerald-600 font-black border border-white text-[13px]">♻️ สลับวันหยุด</button>
+                    <button onclick="handleLeave(this, 'ออกก่อนเวลา')" class="bg-white py-4 rounded-2xl shadow-sm text-blue-600 font-black border border-white text-[13px]">🚸 ออกก่อนเวลา</button>
+                </div>
+            </section>
+
+            <section class="mt-4 pb-10">
+                <div class="flex justify-between items-center px-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-5 bg-slate-400 rounded-full"></div>
+                        <h2 class="font-black text-slate-700 italic uppercase text-[13px]">กิจกรรมล่าสุด (10 รายการ)</h2>
+                    </div>
+                    <div id="loadingStatus" class="hidden text-[10px] font-bold text-blue-500 animate-pulse uppercase">Updating...</div>
+                </div>
+                <div class="bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white overflow-hidden shadow-sm shadow-slate-200">
+                    <div id="recentActivityList" class="divide-y divide-slate-100">
+                        <div class="p-6 text-center text-slate-400 italic text-xs">กำลังโหลดข้อมูลล่าสุด...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="leaveModal" class="fixed inset-0 z-[1100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl pop-in max-h-[90vh] overflow-y-auto">
+            <h3 id="leaveModalTitle" class="text-2xl font-black text-slate-800 italic uppercase mb-4 underline decoration-blue-500 text-center">แจ้งรายการ</h3>
+            <div class="space-y-5 text-left">
+                <div>
+                    <label id="dateLabel1" class="font-black text-slate-400 text-[10px] uppercase ml-2 tracking-widest italic">วันที่ต้องการหยุด (เลือกได้หลายวัน)</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="date" id="dateInput1" class="flex-1 p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 shadow-inner text-sm">
+                        <button onclick="addDateToList(1)" class="bg-emerald-500 text-white px-4 rounded-2xl font-black text-xl hover:bg-emerald-600 active:scale-90 transition-all">+</button>
+                    </div>
+                    <div id="dateListDisplay1" class="flex flex-wrap gap-2 mt-3"></div>
+                </div>
+                <div id="date2Area" class="hidden border-t border-slate-100 pt-4">
+                    <label class="font-black text-blue-500 text-[10px] uppercase ml-2 tracking-widest italic">วันที่มาทำงานแทน (เลือกได้หลายวัน)</label>
+                    <div class="flex gap-2 mt-1">
+                        <input type="date" id="dateInput2" class="flex-1 p-4 bg-blue-50 rounded-2xl border-2 border-blue-100 outline-none font-bold text-slate-700 text-sm">
+                        <button onclick="addDateToList(2)" class="bg-blue-600 text-white px-4 rounded-2xl font-black text-xl hover:bg-blue-700 active:scale-90 transition-all">+</button>
+                    </div>
+                    <div id="dateListDisplay2" class="flex flex-wrap gap-2 mt-3"></div>
+                </div>
+                <div>
+                    <label class="font-black text-slate-400 text-[10px] uppercase ml-2 tracking-widest italic">หมายเหตุเพิ่มเติม</label>
+                    <textarea id="leaveNote" rows="2" placeholder="ใส่เหตุผล (ถ้ามี)..." class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 mt-1 shadow-inner text-sm"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeLeaveModal()" class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase italic">ยกเลิก</button>
+                <button onclick="confirmLeaveSubmit()" class="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black uppercase italic shadow-lg shadow-blue-200">ส่งข้อมูล</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="appToast" class="fixed inset-0 z-[1000] hidden flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-[3px]">
+        <div id="toastContent" class="glass-popup w-full max-w-[320px] rounded-[3rem] p-10 shadow-2xl text-center">
+            <div id="toastIcon" class="text-7xl mb-6">✅</div>
+            <h3 id="toastTitle" class="font-black text-slate-800 uppercase text-xl mb-2 italic">สำเร็จ!</h3>
+            <p id="toastMsg" class="font-bold text-slate-500 leading-relaxed text-sm"></p>
+            <div id="toastBar" class="w-full bg-slate-100 h-1.5 mt-8 rounded-full overflow-hidden">
+                <div id="toastProgress" class="bg-blue-500 h-full w-0 transition-all duration-[2000ms] ease-linear"></div>
+            </div>
+            <button id="toastCloseBtn" onclick="closeToast()" class="hidden w-full bg-slate-800 text-white py-4 rounded-2xl font-black uppercase italic mt-6">ปิด</button>
+        </div>
+    </div>
+
+    <script src="Script.js"></script>
+</body>
+</html>
