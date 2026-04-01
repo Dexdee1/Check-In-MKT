@@ -292,7 +292,7 @@ function renderActivities(list) {
         return;
     }
     const sorted = Array.isArray(list) ? list.slice().sort((a, b) => {
-        if (a.timestamp && b.timestamp) return b.timestamp - a.timestamp;
+        if (a.timestamp && b.timestamp) return a.timestamp - b.timestamp;
         return 0;
     }) : list;
     listEl.innerHTML = sorted.map(item => `

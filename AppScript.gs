@@ -45,10 +45,10 @@ function doGet(e) {
           }))
           .filter(r => !isNaN(r.time.getTime()));
 
-        // ดึง 10 รายการล่าสุด (เรียงจากใหม่สุดมาก่อน)
+        // ดึง 10 รายการล่าสุด (จัดเรียงไว้เป็นเก่าอยู่บน ใหม่อยู่ล่าง)
         recent = validRows
-          .sort((a, b) => b.time - a.time)
-          .slice(0, 10)
+          .sort((a, b) => a.time - b.time)  // time ascending
+          .slice(Math.max(0, validRows.length - 10)) // take last 10 if >10
           .map(r => ({
             time: Utilities.formatDate(r.time, timezone, "HH:mm น."),
             name: r.name,
@@ -85,13 +85,15 @@ function doGet(e) {
         .map(row => ({
           date: Utilities.formatDate(new Date(row[0]), "GMT+7", "dd/MM/yy"),
           time: Utilities.formatDate(new Date(row[0]), "GMT+7", "HH:mm"),
+          datetime: new Date(row[0]).getTime(),
           name: row[1],
           location: row[2],
           type: row[3],
           shift: row[4],
           note: row[5],
           duration: row[6] || ""
-        })).reverse();
+        }))
+        .sort((a, b) => a.datetime - b.datetime); // เก่าสุดอยู่บน, ใหม่สุดอยู่ล่าง
       return resJson({ history: history });
     }
   } catch(err) { 

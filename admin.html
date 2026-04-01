@@ -193,7 +193,14 @@
             try {
                 const res = await fetch(`${API_URL}?action=getIndividual&name=${encodeURIComponent(name)}&t=${new Date().getTime()}`);
                 const data = await res.json();
-                const list = data.history || [];
+                const list = (data.history || []).slice();
+
+                // บังคับเรียงเก่า->ใหม่ ในฝั่ง frontend เพื่อความแน่นอน
+                list.sort((a, b) => {
+                    const ta = a.datetime || new Date(`${a.date} ${a.time}`).getTime();
+                    const tb = b.datetime || new Date(`${b.date} ${b.time}`).getTime();
+                    return ta - tb;
+                });
 
                 if (list.length === 0) {
                     searchBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-300 uppercase font-black italic text-xs">ไม่พบข้อมูลของพนักงานท่านนี้</td></tr>';
