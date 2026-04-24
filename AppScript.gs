@@ -7,7 +7,7 @@ const SHEET_RULES = "กฎระเบียบ";
 
 // ตั้งค่า Telegram
 const TELEGRAM_TOKEN = "8706607367:AAG1O7QXXj9xKX0Lf7jRgnGKkCAf7-7j4So"; 
-const TELEGRAM_CHAT_ID = "-5251625156"; 
+const TELEGRAM_CHAT_ID = "-1003702973235"; 
 
 // --- 🔵 ฟังก์ชันดึงข้อมูล (GET) ---
 function doGet(e) {
