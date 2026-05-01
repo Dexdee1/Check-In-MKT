@@ -13,11 +13,6 @@ let datesSet1 = [];
 let datesSet2 = [];
 let currentLeaveType = "";
 
-// fixed enum employee list (ถ้าต้องการกำหนดค่าตายตัว สามารถแก้ได้ที่นี่)
-const EMPLOYEE_ENUM = [
-    'ศรี','บุญมา','สกลิ','อานน','ต้นตาล','หมิว','แจ๊ค'
-];
-
 // --- 1. เริ่มต้นระบบ ---
 window.onload = () => {
     // Load initial data
@@ -271,42 +266,59 @@ async function loadRecentActivities() {
 
     if (!activityContainer || !loadingStatus) return;
 
-    // Show loading status
+    // 1. เปิดไฟสถานะ UPDATING... (เพื่อให้รู้ว่ากำลังทำงานอยู่)
     loadingStatus.classList.remove('hidden');
-    activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">กำลังโหลดข้อมูลล่าสุด...</div>';
+
+    // --- ⚠️ ลบบรรทัดที่สั่ง innerHTML = 'กำลังโหลด...' ออกไปเลยครับ ⚠️ ---
 
     try {
-        const res = await fetch(API_URL + "?action=getRecentActivities");
+        // 2. ดึงข้อมูลใหม่มาเตรียมไว้ (ใส่ t เพื่อกัน cache)
+        const res = await fetch(API_URL + "?action=getRecent&t=" + new Date().getTime());
         const data = await res.json();
 
         if (data && Array.isArray(data.recent)) {
+            // 3. พอข้อมูลมาครบแล้วค่อยสั่ง Render ทับรายการเก่าทีเดียว
             renderActivities(data.recent);
-        } else {
-            activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">ไม่พบข้อมูลกิจกรรมล่าสุด</div>';
         }
     } catch (e) {
         console.error("Error loading recent activities:", e);
-        activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
     } finally {
-        // Hide loading status
+        // 4. ปิดไฟสถานะ UPDATING...
         loadingStatus.classList.add('hidden');
     }
 }
 
 function renderActivities(recentActivities) {
-    const activityContainer = document.getElementById('activityList');
+    // เปลี่ยนจาก 'activityList' เป็น 'recentActivityList' ให้ตรงกับ HTML
+    const activityContainer = document.getElementById('recentActivityList'); 
     if (!activityContainer) return;
 
-    // Limit to the 5 most recent activities
-    const limitedActivities = recentActivities.slice(0, 5);
+    // ตรวจสอบว่ามีข้อมูลส่งมาไหม
+    if (!recentActivities || recentActivities.length === 0) {
+        activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">ไม่พบข้อมูลกิจกรรมล่าสุด</div>';
+        return;
+    }
 
-    activityContainer.innerHTML = '';
-    limitedActivities.forEach(activity => {
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.textContent = activity;
-        activityContainer.appendChild(activityItem);
-    });
+    // แสดงผลข้อมูล 5 รายการล่าสุด
+    const limitedActivities = recentActivities.slice(0, 5);
+    activityContainer.innerHTML = limitedActivities.map(activity => {
+        // ตรวจสอบสีตามประเภทกิจกรรม
+        const typeStyle = activity.type.includes('เข้างาน') ? 'text-emerald-500 bg-emerald-50' : 
+                         activity.type.includes('ออกงาน') ? 'text-rose-500 bg-rose-50' : 'text-blue-500 bg-blue-50';
+
+        return `
+            <div class="activity-item p-4 flex justify-between items-center border-b border-slate-50">
+                <div class="flex flex-col">
+                    <span class="text-[13px] font-black text-slate-700 italic uppercase">${activity.name}</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${activity.loc} | ${activity.shift}</span>
+                </div>
+                <div class="text-right">
+                    <span class="inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase italic mb-1 ${typeStyle}">${activity.type}</span>
+                    <div class="text-[10px] font-black text-slate-400 italic">${activity.time}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 // --- 3. ตรวจสอบวินัยเหล็ก & Cooldown ---
