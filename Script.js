@@ -20,12 +20,12 @@ const EMPLOYEE_ENUM = [
 
 // --- 1. เริ่มต้นระบบ ---
 window.onload = () => {
-    // โหลดข้อมูลพนักงานและเว็บเพียงครั้งเดียว
+    // Load initial data
     fetchInitialData();
     loadRecentActivities();
 
-    // รีเฟรชเฉพาะหน้ารายการล่าสุดทุก 5 วินาที
-    setInterval(loadRecentActivities, 5000);
+    // Re-enable auto-refresh for recent activities every 20 seconds
+    setInterval(loadRecentActivities, 20000);
 };
 
 async function fetchInitialData() {
@@ -151,7 +151,22 @@ function populateEmployeeList() {
         return;
     }
 
-    allEmployees.sort();
+    // Sort employees numerically if they start with numbers, otherwise alphabetically
+    allEmployees.sort((a, b) => {
+        const numA = parseInt(a.match(/^\d+/));
+        const numB = parseInt(b.match(/^\d+/));
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB; // Sort numerically if both start with numbers
+        } else if (!isNaN(numA)) {
+            return -1; // Numbers come before non-numbers
+        } else if (!isNaN(numB)) {
+            return 1; // Non-numbers come after numbers
+        } else {
+            return a.localeCompare(b, 'th', { sensitivity: 'base' }); // Sort alphabetically
+        }
+    });
+
     const fragment = document.createDocumentFragment();
     const placeholder = document.createElement('option');
     placeholder.value = '';
@@ -251,68 +266,47 @@ function getEmployeeColorClass(name) {
 
 // --- 2. จัดการกิจกรรมล่าสุด ---
 async function loadRecentActivities() {
-    if (isRefreshingRecent) return;
-    isRefreshingRecent = true;
+    const activityContainer = document.getElementById('recentActivityList');
+    const loadingStatus = document.getElementById('loadingStatus');
 
-    const statusEl = document.getElementById('loadingStatus');
-    if(statusEl) statusEl.classList.remove('hidden');
+    if (!activityContainer || !loadingStatus) return;
 
-    // โหลด cache ก่อนถ้ามี
+    // Show loading status
+    loadingStatus.classList.remove('hidden');
+    activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">กำลังโหลดข้อมูลล่าสุด...</div>';
+
     try {
-        const cachedRecent = localStorage.getItem('cachedRecent');
-        if (cachedRecent) {
-            const list = JSON.parse(cachedRecent);
-            if (Array.isArray(list) && list.length > 0) {
-                renderActivities(list);
-            }
+        const res = await fetch(API_URL + "?action=getRecentActivities");
+        const data = await res.json();
+
+        if (data && Array.isArray(data.recent)) {
+            renderActivities(data.recent);
+        } else {
+            activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">ไม่พบข้อมูลกิจกรรมล่าสุด</div>';
         }
     } catch (e) {
-        console.warn('cachedRecent parse fail', e);
-    }
-
-    try {
-        const res = await fetch(API_URL + "?action=getRecent");
-        const data = await res.json();
-        if (data && data.recent && Array.isArray(data.recent)) {
-            renderActivities(data.recent);
-            localStorage.setItem('cachedRecent', JSON.stringify(data.recent));
-        }
-    } catch (e) { console.error("Load activities fail", e); }
-    finally {
-        if(statusEl) statusEl.classList.add('hidden');
-        isRefreshingRecent = false;
+        console.error("Error loading recent activities:", e);
+        activityContainer.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+    } finally {
+        // Hide loading status
+        loadingStatus.classList.add('hidden');
     }
 }
 
-function renderActivities(list) {
-    const listEl = document.getElementById('recentActivityList');
-    if (!listEl) return;
-    if (!list || list.length === 0) {
-        listEl.innerHTML = '<div class="p-6 text-center text-slate-400 italic text-xs">ยังไม่มีประวัติวันนี้</div>';
-        return;
-    }
-    const sorted = Array.isArray(list) ? list.slice().sort((a, b) => {
-        if (a.timestamp && b.timestamp) return a.timestamp - b.timestamp;
-        return 0;
-    }) : list;
-    listEl.innerHTML = sorted.map(item => `
-        <div class="p-4 flex justify-between items-center bg-white/40 activity-item border-b border-slate-50">
-            <div class="flex flex-col">
-                <span class="font-black text-slate-700 text-[13px]">${item.name}</span>
-                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${item.time} | ${item.shift}</span>
-                ${item.duration ? `<span class="text-[11px] text-blue-600 font-black italic mt-1 animate-pulse">⏱️ ${item.duration}</span>` : ''}
-                <span class="text-[9px] text-slate-400 mt-0.5">${item.note || ''}</span>
-            </div>
-            <div class="flex flex-col items-end gap-1">
-                <span class="px-3 py-1 rounded-full text-[9px] font-black italic uppercase 
-                    ${item.type === 'เข้างาน' ? 'bg-emerald-100 text-emerald-600' : 
-                      item.type === 'ออกงาน' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}">
-                    ${item.type}
-                </span>
-                <span class="text-[9px] text-slate-400 italic">${item.loc || ''}</span>
-            </div>
-        </div>
-    `).join('');
+function renderActivities(recentActivities) {
+    const activityContainer = document.getElementById('activityList');
+    if (!activityContainer) return;
+
+    // Limit to the 5 most recent activities
+    const limitedActivities = recentActivities.slice(0, 5);
+
+    activityContainer.innerHTML = '';
+    limitedActivities.forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.textContent = activity;
+        activityContainer.appendChild(activityItem);
+    });
 }
 
 // --- 3. ตรวจสอบวินัยเหล็ก & Cooldown ---
