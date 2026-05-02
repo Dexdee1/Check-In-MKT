@@ -132,20 +132,42 @@ function renderActivities(recentActivities) {
         return;
     }
 
-    const limitedActivities = recentActivities.slice(0, 5);
+    const sortedActivities = [...recentActivities].sort((a, b) => b.timestamp - a.timestamp);
+    const limitedActivities = sortedActivities.slice(0, 5);
+
     activityContainer.innerHTML = limitedActivities.map(activity => {
+        const isCheckOut = activity.type.includes('ออกงาน');
         const typeStyle = activity.type.includes('เข้างาน') ? 'text-emerald-500 bg-emerald-50' : 
-                         activity.type.includes('ออกงาน') ? 'text-rose-500 bg-rose-50' : 'text-blue-500 bg-blue-50';
+                         isCheckOut ? 'text-rose-500 bg-rose-50' : 'text-blue-500 bg-blue-50';
+        
+        // --- ส่วนที่เพิ่มการดึงวันที่มาแสดงผล ---
+        // ปกติ Google Script จะส่งวันที่มาในรูปแบบที่ดึง timestamp ได้
+        const dateObj = new Date(activity.timestamp);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dateDisplay = `${day}/${month}`; // แสดงผลเป็น 02/05[cite: 2]
+
+        let extraInfo = "";
+        if (activity.note && activity.note !== "-") {
+            extraInfo += `<div class="text-[10px] text-slate-500 mt-1 font-medium bg-slate-100/50 px-2 py-0.5 rounded-md inline-block">📝 ${activity.note}</div>`;
+        }
+        if (isCheckOut && activity.duration) {
+            extraInfo += `<div class="text-[10px] text-blue-600 font-black mt-1 flex items-center gap-1">⏱️ ทำงานไป: ${activity.duration}</div>`;
+        }
 
         return `
-            <div class="activity-item p-4 flex justify-between items-center border-b border-slate-50">
-                <div class="flex flex-col">
-                    <span class="text-[13px] font-black text-slate-700 italic uppercase">${activity.name}</span>
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${activity.loc || '-'} | ${activity.shift || '-'}</span>
+            <div class="activity-item p-4 flex justify-between items-start border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                <div class="flex flex-col flex-1 pr-2">
+                    <span class="text-[14px] font-black text-slate-800 italic uppercase leading-tight">${activity.name}</span>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                        📍 ${activity.loc} <span class="mx-1">|</span> ⏳ ${activity.shift}
+                    </div>
+                    ${extraInfo}
                 </div>
-                <div class="text-right">
+                <div class="text-right flex flex-col items-end">
                     <span class="inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase italic mb-1 ${typeStyle}">${activity.type}</span>
-                    <div class="text-[10px] font-black text-slate-400 italic">${activity.time}</div>
+                    <!-- แสดงวันที่ควบคู่กับเวลาเพื่อความละเอียด[cite: 2] -->
+                    <div class="text-[10px] font-black text-slate-400 italic">${dateDisplay} | ${activity.time}</div>
                 </div>
             </div>
         `;
